@@ -1,69 +1,46 @@
 import requests
+from linebot import LineBotApi
+from linebot.models import TextSendMessage, URIAction, ButtonsTemplate, MessageTemplateAction, TemplateSendMessage
+from linebot.exceptions import LineBotApiError
 from bs4 import BeautifulSoup
 
-def crawl_tech_news1():
-    url = 'https://techcrunch.com/'  # 替換成實際的科技新聞網站
+# 設定你的 Channel Access Token
+line_bot_api = LineBotApi('IU9rIPMkgLuuNRN8W4SxB8IPLu4Ag4A0/fvRWwMIhzTlqGx9vyzX5CHWcledrqZ4tVCHVQsZWPdPxpHX+kQsnxHLjjl89qIQciIAmx6Z3vWXZWPbFOmESQPV+/YgxEYrWvw5KxP1/JBgECD2sWtChwdB04t89/1O/w1cDnyilFU=')
+
+def send_to_line_bot(messages):
+    try:
+        # 設定你的 LINE BOT 的聊天室 ID
+        chat_id = '2002180798'
+        
+        # 將消息轉換為合適的字典形式
+        message_dict = messages
+
+        # 傳送訊息到 LINE BOT
+        line_bot_api.broadcast(messages=message_dict)
+    except LineBotApiError as e:
+        print(e)
+
+def crawl_tech_news(url, css_selector):
     response = requests.get(url)
     
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
-        news_titles = soup.find_all(class_='fi-main-block__title')  # 替換成實際的標題元素和類別
+        news_titles = soup.select(css_selector)
         
-        
-        # 提取新聞標題
+        # 提取新聞標題和連結
+        #news_list = [{"title": title.text.strip(), "url": title.a['href']} for title in news_titles if title.a]
         headlines = [title.text.strip() for title in news_titles]
 
         for headline in headlines:
             if headline:
-                print(headline)
+                # 將每條新聞標題單獨發送到 LINE BOT
+                send_to_line_bot([TextSendMessage(text=headline)])
             else:
                 print("Can't get news title.")
     else:
-        print("訪問網站失敗")
-#--------------------------我是分隔線------------------------------#
-def crawl_tech_news2():
-    url = 'https://www.wired.com/'  # 替換成實際的科技新聞網站
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, 'html.parser')
-        news_titles = soup.find_all('h2', class_='SummaryItemHedBase-hiFYpQ jmLbfd summary-item__hed')  # 替換成實際的標題元素和類別
-        
-        
-        # 提取新聞標題
-        headlines = [title.text.strip() for title in news_titles]
+        print(f"訪問網站 {url} 失敗")
 
-        for headline in headlines:
-            if headline:
-                print(headline)
-            else:
-                print("Can't get news title.")
-    else:
-        print("訪問網站失敗")
+# 呼叫函數，分別爬取兩個網站的標題
+crawl_tech_news('https://techcrunch.com/', '.fi-main-block__title')
+crawl_tech_news('https://www.wired.com/', 'h2.SummaryItemHedBase-hiFYpQ.jmLbfd.summary-item__hed')
 
-# 呼叫函數
-crawl_tech_news1()
-crawl_tech_news2()
-
-
-# 在這裡添加整合 Lone Bot 和 Line Bot API 的程式碼
-
-# 設定每天定時執行的任務，這裡使用 schedule
-'''import schedule
-import time
-
-def job():
-    tech_news = crawl_tech_news()
-    
-    if tech_news:
-        # 在這裡添加將新聞發送到 Line Bot 的程式碼
-        pass
-    else:
-        print("Failed to retrieve tech news.")
-
-# 設定每天定時執行的時間
-schedule.every().day.at("08:00").do(job)
-
-while True:
-    schedule.run_pending()
-    time.sleep(1)'''
